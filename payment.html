@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Payment - Zylovia</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f3f5f9;
+            padding: 30px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 25px 35px;
+            border-radius: 15px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h2 { margin-bottom: 18px; }
+        .summary-box {
+            text-align: left;
+            background: #fafafa;
+            padding: 14px;
+            border-radius: 10px;
+            margin: 12px 0;
+            border-left: 4px solid #9e823a;
+        }
+        .summary-box b { display:block; margin-bottom:6px; }
+        img.qr { width: 230px; border-radius: 8px; margin-bottom: 12px; }
+        select, input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            background: #fafafa;
+            font-size: 15px;
+        }
+        button {
+            width: 100%;
+            background: #9e823aff;
+            color: white;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        button:hover { background: grey; }
+        .note {
+            font-size: 13px; color: #555; margin-top: 10px;
+        }
+        .whatsapp-btn {
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            background:#25D366;
+            color:#fff;
+            padding:10px 12px;
+            border-radius:10px;
+            text-decoration:none;
+            margin-top:12px;
+        }
+        .whatsapp-btn img { width:22px; }
+    </style>
+</head>
+<body>
+    <div style="text-align:center;">
+    <img src="../smm/images/logo.png" style="max-width:180px; margin:10px auto;">
+</div>
+<div class="container">
+    <h2>Scan & Pay using PhonePe / GPay / Paytm</h2>
+
+    <!-- QR code (use your existing path) -->
+    <img src="../smm/images/qr.jpeg" class="qr" alt="Scan QR">
+
+    <p><strong>UPI Number:</strong> 9373140815</p>
+
+    <div id="orderSummary" class="summary-box">
+        <!-- JS will fill this -->
+        <b>Order Summary</b>
+        <div id="summaryContent">Loading order...</div>
+    </div>
+
+    <p>Please select payment platform and enter transaction id after payment:</p>
+
+    <form id="paymentForm" onsubmit="handleSubmit(event)">
+        <select id="paymentPlatform" required>
+            <option value="">Select Payment Platform</option>
+            <option value="PhonePe">PhonePe</option>
+            <option value="Google Pay">Google Pay (GPay)</option>
+            <option value="Paytm">Paytm</option>
+        </select>
+
+        <input type="text" id="transactionId" placeholder="Enter Transaction ID" required>
+
+        <button type="submit">Submit Payment</button>
+    </form>
+
+    <div class="note">
+        <strong>Important:</strong> Please ensure your account is <b>Public</b> — private accounts may cause order failure. Prefer best quality services for safe & risk-free results.
+    </div>
+
+    <a id="waBtn" class="whatsapp-btn" target="_blank" href="#">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WA"> Contact on WhatsApp
+    </a>
+</div>
+
+<script>
+/* Load order data from localStorage (saved by index.html) */
+function loadOrder() {
+    const raw = localStorage.getItem('orderData');
+    if (!raw) {
+        document.getElementById('summaryContent').innerText = 'No order found. Please go back and place an order.';
+        // disable form
+        document.getElementById('paymentForm').style.display = 'none';
+        return;
+    }
+    const data = JSON.parse(raw);
+
+    // Ensure amount exists or calculate (if index showed amountBox text)
+    let amount = data.amount || '';
+    // if amount empty, try compute from service text (extract ₹number)
+    if (!amount) {
+        // try to extract price per 1000 from service string
+        const m = data.service && data.service.match(/₹\s*([0-9]+(?:\.[0-9]+)?)/);
+        if (m) {
+            const price = parseFloat(m[1]);
+            if (!isNaN(price) && data.quantity) {
+                amount = ((price * parseFloat(data.quantity)) / 1000).toFixed(2);
+            }
+        }
+    }
+
+    // save amount back in data (so transaction.html has it)
+    data.amount = amount || '';
+    localStorage.setItem('orderData', JSON.stringify(data));
+
+    // Build summary HTML
+    const html = `
+        Platform: ${escapeHtml(data.platform)}<br>
+        Category: ${escapeHtml(data.category)}<br>
+        Service: ${escapeHtml(data.service)}<br>
+        Link: ${escapeHtml(data.link)}<br>
+        Quantity: ${escapeHtml(data.quantity)}<br>
+        Contact: ${escapeHtml(data.contact)}<br>
+        <b>Total Amount: ₹${escapeHtml(data.amount || '0.00')}</b>
+    `;
+    document.getElementById('summaryContent').innerHTML = html;
+
+    // setup WhatsApp link prefilled
+    const waNumber = '919373140815'; // with country code
+    const waText = `Hello,%20I%20have%20placed%20an%20order.%20Platform:%20${encodeURIComponent(data.platform)}%20Service:%20${encodeURIComponent(data.service)}%20Qty:%20${encodeURIComponent(data.quantity)}.%20Please%20confirm%20(please%20confirm%20your%20account%20public%20if%20not%20then%20not%20working%20order%20and%20failed).`;
+    document.getElementById('waBtn').href = `https://wa.me/${waNumber}?text=${waText}`;
+}
+
+/* Escape helper to avoid HTML injection */
+function escapeHtml(s) {
+    if (!s) return '';
+    return s.replace(/&/g, "&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+/* When user submits payment form, store platform + txn in localStorage then go to transaction.html */
+function handleSubmit(e) {
+    e.preventDefault();
+    const platform = document.getElementById('paymentPlatform').value;
+    const txn = document.getElementById('transactionId').value.trim();
+
+    if (!platform) { alert('Please select a payment platform.'); return; }
+    if (!txn) { alert('Please enter transaction id.'); return; }
+
+    const raw = localStorage.getItem('orderData');
+    if (!raw) {
+        alert('Order data missing. Please place order again.');
+        window.location.href = 'index.html';
+        return;
+    }
+    const data = JSON.parse(raw);
+    data.payment_platform = platform;
+    data.transaction_id = txn;
+    // also set status and order_date (Zoho expects DateTime split; we'll prepare in transaction page)
+    data.status = 'Pending';
+    // add order_date as ISO so transaction.html can convert
+    data.order_timestamp = new Date().toISOString();
+
+    localStorage.setItem('orderData', JSON.stringify(data));
+
+    // go to transaction page which will submit to Zoho
+    window.location.href = 'transaction.html';
+}
+
+/* initialize */
+loadOrder();
+</script>
+</body>
+</html>

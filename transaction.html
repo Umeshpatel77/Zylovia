@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Processing Order...</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f7f7f7;
+            padding: 40px;
+            text-align: center;
+        }
+        .box {
+            max-width: 400px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        img.logo{
+            width:170px;
+            margin-bottom:20px;
+        }
+        #successBox{
+            display:none;
+            padding:20px;
+            background:#fff;
+            border-radius:10px;
+            max-width:400px;
+            margin:20px auto;
+            box-shadow:0 0 10px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+
+<!-- UNIVERSAL LOGO -->
+<div style="text-align:center;">
+    <img src="../smm/images/logo.png" class="logo">
+</div>
+
+<div class="box">
+    <h2>Please wait…</h2>
+    <p>Your order is being submitted securely to Zylovia</p>
+</div>
+
+<div id="successBox">
+    <h2>Order Submitted Successfully 🎉</h2>
+    <p>Redirecting...</p>
+</div>
+
+<!-- HIDDEN ZOHO FORM (invisible) -->
+<form id="zohoHiddenForm"
+      action="https://forms.zohopublic.in/up41174gm1/form/Zyloviasmm/formperma/tMtWsw89V1WV86IRKbryKd7yoOqZHYlVx7pvNi8PTZs/htmlRecords/submit"
+      method="POST"
+      target="zohoIframe">
+
+    <!-- Zoho Field Names — replace only if you changed them -->
+    <input type="hidden" name="SingleLine1" id="f_platform">
+    <input type="hidden" name="SingleLine2" id="f_category">
+    <input type="hidden" name="SingleLine3" id="f_service">
+    <input type="hidden" name="Website" id="f_link">
+    <input type="hidden" name="Number1" id="f_quantity">
+    <input type="hidden" name="Number" id="f_amount">
+    <input type="hidden" name="PhoneNumber_countrycode" id="f_contact">
+    <input type="hidden" name="SingleLine4" id="f_payment">
+    <input type="hidden" name="SingleLine5" id="f_txn">
+    <input type="hidden" name="SingleLine6" id="f_status">
+
+    <!-- date -->
+    <input type="hidden" name="DateTime_date" id="f_date">
+    <input type="hidden" name="DateTime_hours" id="f_hour">
+    <input type="hidden" name="DateTime_minutes" id="f_min">
+    <input type="hidden" name="DateTime_meridiem" id="f_ampm">
+
+    <!-- SUCCESS REDIRECT (ABSOLUTE URL REQUIRED) -->
+    <input type="hidden" name="zf_redirect_url" value="https://USERNAME.github.io/REPO/smm/success.html">
+</form>
+
+<iframe name="zohoIframe" style="display:none;"></iframe>
+
+
+<script>
+// Load local storage data
+const data = JSON.parse(localStorage.getItem("orderData") || "{}");
+
+// Generate date/time
+const dt = new Date();
+const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const dstr = dt.getDate().toString().padStart(2,"0") + "-" + months[dt.getMonth()] + "-" + dt.getFullYear();
+
+let hr = dt.getHours();
+let ampm = hr >= 12 ? "PM" : "AM";
+hr = hr % 12; if(hr === 0) hr = 12;
+hr = hr.toString().padStart(2,"0");
+let mins = dt.getMinutes().toString().padStart(2,"0");
+
+// Fill Zoho Hidden Fields
+document.getElementById("f_platform").value = data.platform;
+document.getElementById("f_category").value = data.category;
+document.getElementById("f_service").value = data.service;
+document.getElementById("f_link").value = data.link;
+document.getElementById("f_quantity").value = data.quantity;
+document.getElementById("f_amount").value = data.amount;
+document.getElementById("f_contact").value = data.contact;
+document.getElementById("f_payment").value = data.payment_platform;
+document.getElementById("f_txn").value = data.transaction_id;
+document.getElementById("f_status").value = "Paid";
+
+document.getElementById("f_date").value = dstr;
+document.getElementById("f_hour").value = hr;
+document.getElementById("f_min").value = mins;
+document.getElementById("f_ampm").value = ampm;
+
+const zohoForm = document.getElementById("zohoHiddenForm");
+const successBox = document.getElementById("successBox");
+const zohoIframe = document.getElementsByName("zohoIframe")[0];
+
+// When Zoho finishes submitting → show success UI
+zohoIframe.addEventListener("load", () => {
+    successBox.style.display = "block";
+    setTimeout(() => {
+        window.location.href = "success.html";
+    }, 1500);
+});
+
+// Start submitting automatically
+setTimeout(() => {
+    zohoForm.submit();
+}, 600);
+
+</script>
+
+</body>
+</html>

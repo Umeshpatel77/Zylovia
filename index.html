@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Zylovia SMM Panel</title>
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f3f5f9;
+            padding: 30px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 25px 35px;
+            border-radius: 15px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 12px 15px;
+            margin: 12px 0;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            font-size: 15px;
+            background-color: #fafafa;
+        }
+        button {
+            width: 100%;
+            background: #9e823aff;
+            color: white;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: grey;
+        }
+        .amount-box {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+            padding: 12px;
+            background: #eef0f4;
+            border-radius: 10px;
+            display: none;
+        }
+    </style>
+
+</head>
+
+<body>
+    
+<div style="text-align:center;">
+    <img src="../smm/images/logo.png" style="max-width:180px; margin:10px auto;">
+</div>
+
+<div class="container">
+
+    <h2>Place Your Order</h2>
+
+    <form onsubmit="saveData(); return false;">
+
+        <!-- Platform -->
+        <select id="platform" required onchange="updateCategories()">
+            <option value="">Choose Platform</option>
+            <option value="Instagram">Instagram</option>
+            <option value="YouTube">YouTube</option>
+        </select>
+
+        <!-- Category -->
+        <select id="category" required onchange="updateServices()">
+            <option value="">Choose Category</option>
+        </select>
+
+        <!-- Service -->
+        <select id="service" required onchange="updateAmount()">
+            <option value="">Choose Service</option>
+        </select>
+
+        <!-- Link -->
+        <input type="text" id="link" placeholder="Paste Link" required>
+
+        <!-- Contact -->
+        <input type="text" id="contact" placeholder="WhatsApp Number (10 digits)" maxlength="10" required>
+
+        <!-- Qty -->
+        <input type="number" id="quantity" placeholder="Quantity" required oninput="updateAmount()">
+
+        <!-- AUTO AMOUNT -->
+        <div id="amountBox" class="amount-box"></div>
+
+        <button type="submit">Proceed to Payment</button>
+
+    </form>
+
+</div>
+
+<script>
+/* ------------------ CATEGORY & SERVICE DATA ------------------ */
+
+const categories = {
+    Instagram: [
+        "📷 Instagram - Reel Views",
+        "📷 Instagram - Followers",
+        "📷 Instagram - Likes"
+    ],
+    YouTube: [
+        "▶️ YouTube - Views",
+        "▶️ YouTube - Subscribers",
+        "▶️ YouTube - Likes",
+        "▶️ YouTube - Views [Native Ads]"
+    ]
+};
+
+const servicePrice = {
+    "1 – 🎬 Instagram Reel Views | Speed 500K/Day | ₹3 per 1000": 3,
+    "2 – 🎬 Instagram Reel Views + Reach + Impression | Speed 10M/Day | ₹25 per 1000": 25,
+
+    "1 - 👑 Instagram Followers | Lifetime Refill | Speed 30K/Day | ₹230 per 1000": 230,
+    "2 - 👑 Instagram Followers | Lifetime Refill | Speed 30K/Day| ₹250 per 1000": 250,
+    "3 - 👑 Instagram Followers | 365 Days Refill | Speed 100K/Day| ₹300 per 1000": 300,
+    "5 - 👑 Instagram Followers | 100% Real Indian | Speed 5K/Day | ₹230 per 1000": 230,
+
+    "1 - 👑 Instagram Likes | Indian Quality | ₹30 per 1000": 30,
+    "2 - 👑 Instagram Likes | Non Drop | ₹35 per 1000": 35,
+    "3 - 👑 Instagram Real Active Indian Likes | ₹200 per 1000": 200,
+    "4 - 👑 Instagram Likes | Real Indian | ₹250 per 1000": 250,
+
+    "1 - 🎬 YouTube Views | Non-Drop | ₹150 per 1000": 150,
+
+    "1 - 👑 YouTube Subscribers | ₹2000 per 1000": 2000,
+    "2 - 👑 YouTube Subscribers | ₹4200 per 1000": 4200,
+    "3 - 👑 YouTube Subscribers | ₹2800 per 1000": 2800,
+    "4 - 👑 YouTube Subscribers | ₹3000 per 1000": 3000,
+    "5 - 👑 YouTube Subscribers | ₹4000 per 1000": 4000,
+
+    "1 - 👑 YouTube Likes | ₹22 per 1000": 22,
+    "2 - 👑 YouTube Likes | ₹40 per 1000": 40,
+    "3 - 👑 YouTube Likes | ₹140 per 1000": 140,
+
+    "1 - 🎬 YouTube Native Ads Views | ₹150 per 1000": 150
+};
+
+const services = {
+    "📷 Instagram - Reel Views": [
+        "1 – 🎬 Instagram Reel Views | Speed 500K/Day | ₹3 per 1000",
+        "2 – 🎬 Instagram Reel Views + Reach + Impression | Speed 10M/Day | ₹25 per 1000"
+    ],
+    "📷 Instagram - Followers": [
+        "1 - 👑 Instagram Followers | Lifetime Refill | Speed 30K/Day | ₹230 per 1000",
+        "2 - 👑 Instagram Followers | Lifetime Refill | Speed 30K/Day| ₹250 per 1000",
+        "3 - 👑 Instagram Followers | 365 Days Refill | Speed 100K/Day| ₹300 per 1000",
+        "5 - 👑 Instagram Followers | 100% Real Indian | Speed 5K/Day | ₹230 per 1000"
+    ],
+    "📷 Instagram - Likes": [
+        "1 - 👑 Instagram Likes | Indian Quality | ₹30 per 1000",
+        "2 - 👑 Instagram Likes | Non Drop | ₹35 per 1000",
+        "3 - 👑 Instagram Real Active Indian Likes | ₹200 per 1000",
+        "4 - 👑 Instagram Likes | Real Indian | ₹250 per 1000"
+    ],
+
+    "▶️ YouTube - Views": [
+        "1 - 🎬 YouTube Views | Non-Drop | ₹150 per 1000"
+    ],
+    "▶️ YouTube - Subscribers": [
+        "1 - 👑 YouTube Subscribers | ₹2000 per 1000",
+        "2 - 👑 YouTube Subscribers | ₹4200 per 1000",
+        "3 - 👑 YouTube Subscribers | ₹2800 per 1000",
+        "4 - 👑 YouTube Subscribers | ₹3000 per 1000",
+        "5 - 👑 YouTube Subscribers | ₹4000 per 1000"
+    ],
+    "▶️ YouTube - Likes": [
+        "1 - 👑 YouTube Likes | ₹22 per 1000",
+        "2 - 👑 YouTube Likes | ₹40 per 1000",
+        "3 - 👑 YouTube Likes | ₹140 per 1000"
+    ],
+    "▶️ YouTube - Views [Native Ads]": [
+        "1 - 🎬 YouTube Native Ads Views | ₹150 per 1000"
+    ]
+};
+
+/* ---------------- FUNCTIONS ---------------- */
+
+function updateCategories() {
+    let platform = document.getElementById("platform").value;
+    let cat = document.getElementById("category");
+    cat.innerHTML = "<option value=''>Choose Category</option>";
+
+    if (categories[platform]) {
+        categories[platform].forEach(c => {
+            let op = document.createElement("option");
+            op.value = c;
+            op.textContent = c;
+            cat.appendChild(op);
+        });
+    }
+}
+
+function updateServices() {
+    let category = document.getElementById("category").value;
+    let srv = document.getElementById("service");
+
+    srv.innerHTML = "<option value=''>Choose Service</option>";
+
+    if (services[category]) {
+        services[category].forEach(s => {
+            let op = document.createElement("option");
+            op.value = s;
+            op.textContent = s;
+            srv.appendChild(op);
+        });
+    }
+}
+
+function updateAmount() {
+    let service = document.getElementById("service").value;
+    let qty = parseInt(document.getElementById("quantity").value);
+    let box = document.getElementById("amountBox");
+
+    if (service && qty && servicePrice[service]) {
+        let price = servicePrice[service];
+        let total = (price * qty) / 1000;
+        box.style.display = "block";
+        box.innerHTML = "Amount: ₹" + total;
+    }
+}
+
+/* SAVE DATA IN LOCAL STORAGE */
+function saveData() {
+    let data = {
+        platform: document.getElementById("platform").value,
+        category: document.getElementById("category").value,
+        service: document.getElementById("service").value,
+        link: document.getElementById("link").value,
+        contact: document.getElementById("contact").value,
+        quantity: document.getElementById("quantity").value,
+        amount: document.getElementById("amountBox").innerText.replace("Amount: ₹","")
+    };
+
+    localStorage.setItem("orderData", JSON.stringify(data));
+
+    window.location.href = "payment.html";
+}
+</script>
+
+</body>
+</html>
